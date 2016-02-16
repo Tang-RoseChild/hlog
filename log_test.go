@@ -55,24 +55,24 @@ func TestDebug(t *testing.T) {
 }
 
 func TestErr(t *testing.T) {
-	const (
-		msg = "debugInfo"
+	var (
+		msg = []string{"debugInfo"}
 	)
 
 	var tHead = testHead{}
 
-	var testString = fmt.Sprintf("%s %s", tHead.FormatHead(), msg)
+	var testString = fmt.Sprintf("%v %v", tHead.FormatHead(), msg)
 	// fmt.Println(testString)
 	// fmt.Println("test head : ", tHead.FormatHead())
 	var buf bytes.Buffer
 	l := New(&buf)
 	l.SetFHead(tHead)
 	l.Run()
-	l.Error(msg)
+	l.Error(msg[0])
 	l.Stop()
 	result := buf.String()
 	if strings.TrimSpace(result) != strings.TrimSpace(testString) {
-		t.Errorf("need '%s' but get '%s' \n", testString, result)
+		t.Errorf("need '%v' but get '%v' \n", testString, result)
 	}
 	// fmt.Println("result ::::::::: ", result)
 

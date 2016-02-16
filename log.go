@@ -38,6 +38,7 @@ type Logger struct {
 	fHead      FormatHeader
 	inited     bool          // whether inited
 	initedChan chan struct{} // used for setting inited
+	nocache    bool
 }
 
 type msg struct {
@@ -84,6 +85,10 @@ func (l *Logger) init() {
 	for {
 		select {
 		case msg := <-l.msgChan:
+			if l.nocache {
+				l.flush()
+				continue
+			}
 			debug_p("in l.msgchan")
 			l.cache[l.cacheIndex] = msg
 			l.cacheIndex++
@@ -124,7 +129,7 @@ func (l *Logger) flush() error {
 	for i := 0; i < l.cacheIndex; i++ {
 		// debug_p("in loop i: ", i, " v : ", l.cache[i])
 		debug_p(l.fHead.FormatHead(), l.cache[i].c)
-		_, err := fmt.Fprintf(l.w, "%s %s", l.fHead.FormatHead(), l.cache[i].c)
+		_, err := fmt.Fprintf(l.w, "%v %v\n", l.fHead.FormatHead(), l.cache[i].c)
 		if err != nil {
 			errString += err.Error()
 		}
@@ -155,32 +160,36 @@ func (l *Logger) SetMax(max int) bool {
 	return true
 }
 
+func (l *Logger) SetNoCache(b bool) {
+	l.nocache = b
+}
+
 // Debug
-func (l *Logger) Debug(v interface{}) {
+func (l *Logger) Debug(v ...interface{}) {
 	if !l.debugFlag {
 		return
 	}
 
 	l.msgChan <- &msg{
-		c: v,
+		c: fmt.Sprintln(v),
 		t: DebugMsg,
 	}
 
 }
 
 // Info
-func (l *Logger) Info(v interface{}) {
+func (l *Logger) Info(v ...interface{}) {
 	l.msgChan <- &msg{
-		c: v,
+		c: fmt.Sprintln(v),
 		t: InfoMsg,
 	}
 
 }
 
 // Error
-func (l *Logger) Error(v interface{}) {
+func (l *Logger) Error(v ...interface{}) {
 	l.msgChan <- &msg{
-		c: v,
+		c: fmt.Sprintln(v),
 		t: ErrorMsg,
 	}
 
